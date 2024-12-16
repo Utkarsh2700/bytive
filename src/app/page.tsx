@@ -1,101 +1,237 @@
-import Image from "next/image";
+"use client";
+import {
+  addInitialItems,
+  updateTask,
+  updateTodo,
+} from "@/lib/features/todos/todoSlice";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import DropArea from "@/components/DropArea";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const router = useRouter();
+  const {
+    value: todos,
+    error,
+    loading,
+  } = useAppSelector((state) => state.todo);
+  const dispatch = useAppDispatch();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // console.log("todos", todos);
+
+  const [activeCard, setActiveCard] = useState<number>();
+
+  useEffect(() => {
+    fetchTodos();
+  }, []);
+
+  // Method to fetch todos from  jsonPlceholder to display on homepage
+  const fetchTodos = async () => {
+    try {
+      const response = await fetch(
+        "https://jsonplaceholder.typicode.com/todos"
+      );
+      const data = await response.json();
+      // console.log("data", data);
+      dispatch(addInitialItems(data));
+      localStorage.setItem("todos", JSON.stringify(data));
+    } catch (error) {
+      console.log("Error :", error);
+    }
+  };
+
+  // function to update the todo completion status on homepage
+  const handleCheck = (e: React.ChangeEvent<HTMLInputElement>, id: number) => {
+    const updatedTodo = todos.find((todo) => todo.id === id);
+
+    if (updatedTodo) {
+      dispatch(updateTask({ ...updatedTodo, completed: e.target.checked }));
+    }
+  };
+
+  // function to redirect to edit page and update the todo
+  const handleClickToEdit = (id: number) => {
+    const todo = todos.find((todo) => todo.id === id);
+    if (todo) {
+      router.push(`/edit/${todo.id}`);
+    }
+  };
+
+  // function to handle drag and drop functionality
+  const onDrop = (status: boolean, position: number) => {
+    console.log(
+      `${activeCard} is going to place into ${status} and at the position ${position}`
+    );
+    if (activeCard === null || activeCard === undefined) return;
+
+    const updateTodos = [...todos];
+    // console.log("updateTodos", updateTodos);
+    const todoToMove = updateTodos[activeCard];
+    // console.log("taskToMove", todoToMove);
+    const updatedTask = updateTodos.filter(
+      (todo, index) => index !== activeCard
+    );
+
+    // console.log("updatedTask", updatedTask);
+
+    const updatedTaskList = updatedTask.splice(position, 0, {
+      ...todoToMove,
+      completed: status,
+    });
+
+    dispatch(updateTodo(updatedTask));
+
+    localStorage.setItem("todos", JSON.stringify(updateTask));
+    setActiveCard(-1);
+  };
+
+  if (loading) return <p className="text-center text-lg">Loading...</p>;
+  if (error)
+    return <p className="text-center text-lg text-red-500">Error: {error}</p>;
+  return (
+    <>
+      <ul className="ml-4 list-disc font-semibold text-sm">
+        <li>
+          Click on the title of a todo to edit or check/uncheck the checkbox to
+          change the status from pending to completed or vice-versa
+        </li>
+        <li>
+          Hover over to and drag as soon as cursor changes to drag.Priortize a
+          particular to by dragging it to top{" "}
+        </li>
+      </ul>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          Todo List
+        </h2>
+        <div className="flex justify-evenly items-center font-semibold text-base">
+          <h1>Completed</h1>
+
+          <h1>Pending</h1>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        <div className="flex">
+          {/* Completed Todos */}
+          <div className="mr-2">
+            <ul className="mt-6 space-y-4">
+              <DropArea onDrop={() => onDrop(true, 0)} />
+              {todos.map((item, index) => (
+                <div className="" key={item.id}>
+                  <div className="completed">
+                    {item.completed && (
+                      <React.Fragment>
+                        <li
+                          // key={index}
+                          className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-grab active:opacity-75 active:border-[#111]"
+                          draggable
+                          onDragStart={() => setActiveCard(index)}
+                          onDragEnd={() => setActiveCard(-1)}
+                        >
+                          <div
+                            className="flex items-center cursor-pointer"
+                            onClick={(id) => handleClickToEdit(item.id)}
+                          >
+                            <p className="mr-2">{index + 1}.</p>
+                            <input
+                              type="checkbox"
+                              checked={item.completed}
+                              // value={item.completed}
+                              className="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+                              onChange={(e) => handleCheck(e, item.id)}
+                            />
+                            <p className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {item.title}
+                            </p>
+                          </div>
+                          <button
+                            className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                            aria-label={`Delete todo item ${item.userId}`}
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </li>
+                        <DropArea
+                          onDrop={() => onDrop(item.completed, index)}
+                        />
+                      </React.Fragment>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </ul>
+          </div>
+          <div className="ml-2">
+            {/* Pending Todos */}
+            <ul className="mt-6 space-y-4">
+              <DropArea onDrop={() => onDrop(false, 0)} />
+              {todos.map((item, index) => (
+                <div className="pending" key={item.id}>
+                  {!item.completed && (
+                    <React.Fragment>
+                      <li
+                        // key={index}
+                        className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-grab active:opacity-75 active:border-[#111]"
+                        draggable
+                        onDragStart={() => setActiveCard(index)}
+                        onDragEnd={() => setActiveCard(-1)}
+                      >
+                        <div
+                          className="flex items-center cursor-pointer"
+                          onClick={(id) => handleClickToEdit(item.id)}
+                        >
+                          <p className="mr-2">{index + 1}.</p>
+                          <input
+                            type="checkbox"
+                            checked={item.completed}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
+                            onChange={(e) => handleCheck(e, item.id)}
+                          />
+                          <p className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {item.title}
+                          </p>
+                        </div>
+                        <button
+                          className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                          aria-label={`Delete todo item ${item.userId}`}
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </li>
+                      <DropArea onDrop={() => onDrop(item.completed, index)} />
+                    </React.Fragment>
+                  )}
+                </div>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
