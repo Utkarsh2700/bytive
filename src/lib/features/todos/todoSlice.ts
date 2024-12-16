@@ -32,10 +32,7 @@ export const todoSlice = createSlice({
     },
     remove: (state, action) => {
       // function to delete a todo
-      const updatedTodos = state.value.filter(
-        (todo) => todo.id === action.payload
-      );
-      state.value = updatedTodos;
+      state.value = action.payload;
     },
     updateTask: (state, action) => {
       // function to update the completed status from homepage

@@ -15,7 +15,7 @@ const DropArea: React.FC<DropAreaProps> = ({ onDrop }) => {
         setShowDrop(false);
       }}
       onDragOver={(e) => e.preventDefault()}
-      className={`my-2 w-full h-[100px] text-[#dcdcdc] border-dashed border-[#dcdcdc] border rounded-[10px] p-4 mb-4 ${
+      className={`my-2 w-full h-[60px] text-[#dcdcdc] border-dashed border-[#dcdcdc] border rounded-[10px] p-4 mb-4 ${
         showDrop
           ? "opacity-100 transition-all duration-200 ease-in-out"
           : "opacity-0"
